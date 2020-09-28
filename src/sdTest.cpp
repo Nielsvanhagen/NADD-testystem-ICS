@@ -15,14 +15,14 @@ bool readfromSD = false;
 void sdCardTest(){
   Serial.println("Initializing SD card...");
 
-  if (!SD.begin(chipSelect)) {
-    Serial.println("ERROR initialization failed!");
-    return;
+  if (SD.begin(chipSelect)) {
+    Serial.println("Initialization done.");
+
+    initialized = true;
   }
-  Serial.println("Initialization done.");
-
-  initialized = true;
-
+  else{
+    Serial.println("ERROR initialization failed!");
+  }
   // open the file.
   myFile = SD.open("test.txt", FILE_WRITE);
 
@@ -41,7 +41,8 @@ void sdCardTest(){
 
   // re-open the file for reading:
   myFile = SD.open("test.txt");
-  if (myFile) {
+
+  if (myFile){
     // read from the file until there's nothing else in it:
     while (myFile.available()) {
     	Serial.write(myFile.read());
@@ -53,16 +54,15 @@ void sdCardTest(){
     readfromSD = true;
   } else {
   	// if the file didn't open, print an error:
-    Serial.println("ERROR opening test.txt");
+    Serial.println("ERROR reading test.txt");
   }
-  SD.remove("test.txt"); 
-  // SD.remove("TEST.TXT");
-  // if(! SD.remove("test.txt")){
-  //   Serial.println(F("ultra not working"));
-  //   return;
-  // }
-  //
-  // if(initialized && writeToSD && readfromSD){
-  //   Serial.println("SD TEST COMPLETE");
-  // }
+  SD.remove("test.txt");
+
+  //ACK command to tool
+  if(initialized && writeToSD && readfromSD){
+    Serial.println("T1-t");
+  }
+  else{
+    Serial.println("T1-f");
+  }
 }

@@ -20,6 +20,7 @@ event_thread=threading.Event()
 
 test1_stat = False
 test2_stat = False
+test3_stat = False
 
 VERSION = "Version 1.0"
 
@@ -117,6 +118,7 @@ class Ui_MainWindow(object):
         self.pushButton_t3.setGeometry(QtCore.QRect(100, 100, 75, 23))
         self.pushButton_t3.setObjectName("pushButton_3")
         self.pushButton_t3.setEnabled(False)
+        self.pushButton_t3.clicked.connect(self.test3)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -370,6 +372,55 @@ class Ui_MainWindow(object):
             self.event_thread.set()
 
 
+    def test3(self):
+        print("com port:")
+        print(connection.isOpen())
+        global test3_stat
+
+        if not(test3_stat):
+            try:
+                connection.port = self.comboBox.currentText()
+
+                connection.close()
+                connection.open()
+                self.log_reset()
+                self.listWidget.addItem('Starting test 3...')
+
+                self.status_t3.setStyleSheet("background-color: orange")
+                test3_stat = True
+
+                #Start test
+                print("Writing to teensy...")
+                connection.write(b'3')
+
+                #Button conf
+                self.pushButton_t1.setEnabled(False)
+                self.pushButton_t2.setEnabled(False)
+                self.pushButton_t3.setText("STOP")
+
+                #starting thread test
+                # global event_thread
+                self.event_thread=threading.Event()
+                self.c_thread=threading.Thread(target=self.myEvenListener, args=(event_thread,))
+                self.c_thread.start()
+            except serial.serialutil.SerialException:
+                msg = QMessageBox()
+                msg.setWindowTitle("ERROR - COM CONNECTION")
+                msg.setText("Could not connect with com port!")
+                x = msg.exec_()
+                self.close_connection()
+        elif(test3_stat):
+
+            #Button conf
+            self.pushButton_t1.setEnabled(True)
+            self.pushButton_t2.setEnabled(True)
+            self.pushButton_t3.setText("START")
+
+            test3_stat = False
+
+            self.event_thread.set()
+
+
     def set_test_default(self):
         #Enable widgets
         self.comboBox.setEnabled(True)
@@ -392,6 +443,7 @@ class Ui_MainWindow(object):
         while state and not event_thread.isSet():
             data = connection.readline()[:-2] #the last bit gets rid of the new-line chars
             print(data)
+
             if(data == bytes('T1-t', encoding='utf-8')):
                 print("Test 1 complete --ack")
                 self.status_t1.setStyleSheet("background-color: green")
@@ -412,6 +464,16 @@ class Ui_MainWindow(object):
                 self.status_t2.setStyleSheet("background-color: red")
                 self.set_test_default()
                 test2_stat = False
+            elif(data == bytes('T3-t', encoding='utf-8')):
+                print("Test 2 complete --ack")
+                self.status_t3.setStyleSheet("background-color: green")
+                self.set_test_default()
+                test3_stat = False
+            elif(data == bytes('T3-f', encoding='utf-8')):
+                print("Test 3 failed --ack")
+                self.status_t3.setStyleSheet("background-color: red")
+                self.set_test_default()
+                test3_stat = False
             elif data:
                 self.listWidget.addItem(str(data.decode("utf-8")))
                 print(data)

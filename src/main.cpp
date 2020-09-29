@@ -1,17 +1,24 @@
 //main.cpp
 
 #include <Arduino.h>
-#include <EEPROM.h>
 #include "sdTest.h"
+#include "eepromTest.h"
+#include "ioTest.h"
+// #include "eeprom.h"
 
-uint8_t* addr = 0;
-int val = 22;
 void eepromTest();
+#define PIN_GPO1	14				//light in push to talk button
+#define PIN_GPO2	39				//TBD
+#define PIN_GPO3	36				//TBD
 
 void setup() {
   Serial.begin(9600);
    while (!Serial) {
      ;}
+
+     pinMode(PIN_GPO1, OUTPUT);
+     pinMode(PIN_GPO2, OUTPUT);
+     pinMode(PIN_GPO3, OUTPUT);
   //Serial.println("NADD test system version: 1.0");
 }
 
@@ -28,35 +35,13 @@ void loop() {
       Serial.println("Starting eeprom test...");
       eepromTest();
     }
+    else if(serIn=='3') {
+      delay(500);
+      Serial.println("Starting IO test...");
+      digitalWrite(PIN_GPO1, HIGH);
+      delay(500);
+      digitalWrite(PIN_GPO1, LOW);
+      ioTest();
+    }
   }
-  delay(1000);
-}
-
-void eepromTest(){
-  Serial.println("Writing to eeprom...");
-  eeprom_write_byte(addr, val);
-  addr = 0;
-  for(int i = 1; i < 100; i++ ){
-      eeprom_write_byte(addr, i);
-      //Serial.println(i);
-      addr = addr + 1;
-  }
-  delay(500);
-  Serial.println("Reading from eeprom...");
-
-  addr = 0;
-  for(int i = 0; i < 100; i++ ){
-      byte value = eeprom_read_byte(addr);
-
-      if(!(value == i)){
-        Serial.println("EEPROM fault by byte: " + i);
-      }
-      //Serial.println(value);
-      addr = addr + 1;
-  }
-  Serial.println("Erasing test files...");
-  for ( unsigned int i = 0 ; i < EEPROM.length() ; i++ ){
-    EEPROM.write(i, 0);
-  }
-
 }
